@@ -1,0 +1,6 @@
+a=input('영화제목:')
+b=input('티켓가격:')
+f1=open('movie1.txt', 'w')
+f1.write(a+'\n')
+f1.write(b)
+f1.close()
