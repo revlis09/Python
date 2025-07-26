@@ -11,5 +11,5 @@ if gander=="1" or gander=="2":
 elif gander=="3" or gander=="4":
   birth_last=2000+int(birth)
 
-print(f"{birth_last}년 태어난 {gander_last} 입니다.")
+print(f"{birth_last}년 태어난 {gander_last}")
 
