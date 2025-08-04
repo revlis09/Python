@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DormMate - 기숙사 생활 도우미</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f3f4f6;
+      color: #111;
+    }
+
+    header {
+      background: #3b82f6;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-around;
+      background: #e5e7eb;
+      padding: 0.5rem 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    nav button {
+      background: none;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      transition: background-color 0.2s ease;
+    }
+
+    nav button:hover,
+    nav button.active {
+      background-color: #3b82f6;
+      color: white;
+    }
+
+    section {
+      display: none;
+      padding: 1rem 1.5rem;
+      max-width: 600px;
+      margin: 1rem auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+    }
+
+    section.active {
+      display: block;
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      color: #2563eb;
+    }
+
+    ul {
+      padding-left: 1.2rem;
+    }
+
+    li {
+      margin-bottom: 0.6rem;
+    }
+
+    input[type="text"],
+    input[type="time"] {
+      width: 60%;
+      padding: 0.5rem;
+      margin-right: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    button {
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      border: none;
+      background-color: #3b82f6;
+      color: white;
+      font-weight: 600;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #2563eb;
+    }
+
+    .todo-item,
+    .complaint-item,
+    .notice-item {
+      background: #f9fafb;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      margin-bottom: 0.6rem;
+      cursor: pointer;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.05);
+      transition: background-color 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .todo-item:hover,
+    .complaint-item:hover,
+    .notice-item:hover {
+      background-color: #dbeafe;
+    }
+
+    .edit-input {
+      width: 70%;
+      padding: 0.4rem;
+      font-size: 1rem;
+      margin-right: 0.5rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .edit-btn,
+    .save-btn {
+      background-color: #10b981;
+      margin-left: 0.2rem;
+    }
+
+    .save-btn:hover {
+      background-color: #059669;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>DormMate 🏠 - 기숙사 생활 도우미</header>
+
+  <nav>
+    <button id="nav-home" class="active" onclick="changeTab('home')">🏠 일정</button>
+    <button id="nav-todo" onclick="changeTab('todo')">📝 할 일</button>
+    <button id="nav-duty" onclick="changeTab('duty')">🧹 당번표</button>
+    <button id="nav-notice" onclick="changeTab('notice')">📢 공지사항</button>
+  </nav>
+
+  <!-- 일정 -->
+  <section id="home" class="active">
+    <h2>기숙사 일정 관리</h2>
+    <ul id="scheduleList"></ul>
+  </section>
+
+  <!-- 할 일 -->
+  <section id="todo">
+    <h2>오늘의 할 일 (시간별 정렬)</h2>
+    <input type="time" id="todoTimeInput" />
+    <input type="text" id="todoInput" placeholder="할 일을 입력하세요" />
+    <button onclick="addTodo()">추가</button>
+    <div id="todoList"></div>
+  </section>
+
+  <!-- 당번표 & 불만 -->
+  <section id="duty">
+    <h2>이번 주 당번표</h2>
+    <button onclick="autoAssignDuty()">당번 자동 배정 🔄</button>
+    <ul id="dutyList" style="margin-top: 1rem;"></ul>
+
+    <hr style="margin: 1.5rem 0;" />
+
+    <h3>🗨️ 당번 관련 불만 게시하기</h3>
+    <input type="text" id="complaintInput" placeholder="불만이나 건의사항을 적어주세요" />
+    <button onclick="addComplaint()">등록</button>
+    <div id="complaintList" style="margin-top: 1rem;"></div>
+  </section>
+
+  <!-- 공지사항 -->
+  <section id="notice">
+    <h2>공지사항 관리</h2>
+    <input type="text" id="noticeInput" placeholder="공지사항 내용을 입력하세요" />
+    <button onclick="addNotice()">추가</button>
+    <div id="noticeList" style="margin-top: 1rem;"></div>
+  </section>
+
+  <script>
+    // --- 탭 이동 ---
+    function changeTab(tabId) {
+      ['home', 'todo', 'duty', 'notice'].forEach(id => {
+        document.getElementById(id).classList.toggle('active', id === tabId);
+        document.getElementById('nav-' + id).classList.toggle('active', id === tabId);
+      });
+    }
+
+    // --- 일정 관리 ---
+    const defaultSchedule = {
+      "월요일": "기상: 07:00",
+      "화요일": "아침 점호: 07:20",
+      "수요일": "자습: 20:00",
+      "목요일": "취침: 23:00",
+      "금요일": "주간 점검"
+    };
+
+    function loadSchedule() {
+      const sched = JSON.parse(localStorage.getItem('schedule'));
+      if (!sched) {
+        localStorage.setItem('schedule', JSON.stringify(defaultSchedule));
+        return defaultSchedule;
+      }
+      return sched;
+    }
+
+    function renderSchedule() {
+      const schedule = loadSchedule();
+      const ul = document.getElementById('scheduleList');
+      ul.innerHTML = '';
+
+      for (const day in schedule) {
+        const li = document.createElement('li');
+        li.dataset.day = day;
+
+        const textSpan = document.createElement('span');
+        textSpan.textContent = `${day}: ${schedule[day]} `;
+        li.appendChild(textSpan);
+
+        const editBtn = document.createElement('button');
+        editBtn.textContent = "수정";
+        editBtn.style.marginLeft = '10px';
+        editBtn.onclick = () => editSchedule(day, textSpan, editBtn);
+        li.appendChild(editBtn);
+
+        ul.appendChild(li);
+      }
+    }
+
+    function editSchedule(day, textSpan, editBtn) {
+      const schedule = loadSchedule();
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = schedule[day];
+      input.className = 'edit-input';
+
+      const saveBtn = document.createElement('button');
+      saveBtn.textContent = '저장';
+      saveBtn.className = 'save-btn';
+
+      saveBtn.onclick = () => {
+        const val = input.value.trim();
+        if (val.length === 0) {
+          alert("일정은 비워둘 수 없습니다.");
+          return;
+        }
+        schedule[day] = val;
+        localStorage.setItem('schedule', JSON.stringify(schedule));
+        renderSchedule();
+      };
+
+      textSpan.style.display = 'none';
+      editBtn.style.display = 'none';
+
+      const parent = textSpan.parentNode;
+      parent.appendChild(input);
+      parent.appendChild(saveBtn);
+    }
+
+    // --- 할 일 관리 (시간 포함) ---
+    function addTodo() {
+      const input = document.getElementById('todoInput');
+      const timeInput = document.getElementById('todoTimeInput');
+      const val = input.value.trim();
+      const time = timeInput.value;
+
+      if (!val) return;
+
+      const todos = JSON.parse(localStorage.getItem('todos') || '[]');
+      todos.push({ text: val, time: time || "00:00" });
+      localStorage.setItem('todos', JSON.stringify(todos));
+      input.value = '';
+      timeInput.value = '';
+      renderTodos();
+    }
+
+    function renderTodos() {
+      const list = document.getElementById('todoList');
+      list.innerHTML = '';
+      const todos = JSON.parse(localStorage.getItem('todos') || '[]');
+
+      // 시간순 정렬
+      todos.sort((a, b) => a.time.localeCompare(b.time));
+
+      todos.forEach((todo, idx) => {
+        const div = document.createElement('div');
+        div.className = 'todo-item';
+
+        const timeSpan = document.createElement('span');
+        timeSpan.style.fontWeight = 'bold';
+        timeSpan.style.marginRight = '10px';
+        timeSpan.textContent = todo.time;
+
+        const textSpan = document.createElement('span');
+        textSpan.textContent = todo.text;
+
+        div.appendChild(timeSpan);
+        div.appendChild(textSpan);
+
+        div.title = '클릭하면 삭제됩니다.';
+        div.onclick = () => {
+          if (confirm("이 할 일을 삭제할까요?")) {
+            todos.splice(idx, 1);
+            localStorage.setItem('todos', JSON.stringify(todos));
+            renderTodos();
+          }
+        };
+        list.appendChild(div);
+      });
+    }
+
+    // --- 당번 자동 배정 ---
+    const students = ["김가은", "이현우", "박수민", "최민재", "정윤지"];
+    const days = ["월요일", "화요일", "수요일", "목요일", "금요일"];
+
+    function autoAssignDuty() {
+      let startIdx = parseInt(localStorage.getItem('dutyStartIdx')) || 0;
+      const dutyArr = [];
+      for (let i = 0; i < days.length; i++) {
+        const idx = (startIdx + i) % students.length;
+        dutyArr.push({ day: days[i], name: students[idx] });
+      }
+      localStorage.setItem('dutyList', JSON.stringify(dutyArr));
+      localStorage.setItem('dutyStartIdx', (startIdx + 1) % students.length);
+      renderDuty();
+    }
+
+    function renderDuty() {
+      const ul = document.getElementById('dutyList');
+      ul.innerHTML = '';
+      const dutyArr = JSON.parse(localStorage.getItem('dutyList'));
+      if (!dutyArr) {
+        ul.innerHTML = '<li>아직 당번표가 설정되어 있지 않습니다.<br>“당번 자동 배정” 버튼을 눌러주세요.</li>';
+        return;
+      }
+      dutyArr.forEach(duty => {
+        const li = document.createElement('li');
+        li.textContent = `${duty.day}: ${duty.name}`;
+        ul.appendChild(li);
+      });
+    }
+
+    // --- 불만 게시판 ---
+    function addComplaint() {
+      const input = document.getElementById('complaintInput');
+      const val = input.value.trim();
+      if (!val) return;
+      const complaints = JSON.parse(localStorage.getItem('complaints') || '[]');
+      complaints.push(val);
+      localStorage.setItem('complaints', JSON.stringify(complaints));
+      input.value = '';
+      renderComplaints();
+    }
+
+    function renderComplaints() {
+      const list = document.getElementById('complaintList');
+      list.innerHTML = '';
+      const complaints = JSON.parse(localStorage.getItem('complaints') || '[]');
+      complaints.forEach((text, idx) => {
+        const div = document.createElement('div');
+        div.className = 'complaint-item';
+        div.textContent = `익명: ${text}`;
+        div.title = '클릭하면 삭제됩니다.';
+        div.onclick = () => {
+          if (confirm("이 불만을 삭제할까요?")) {
+            complaints.splice(idx, 1);
+            localStorage.setItem('complaints', JSON.stringify(complaints));
+            renderComplaints();
+          }
+        };
+        list.appendChild(div);
+      });
+    }
+
+    // --- 공지사항 ---
+    function addNotice() {
+      const input = document.getElementById('noticeInput');
+      const val = input.value.trim();
+      if (!val) return;
+      const notices = JSON.parse(localStorage.getItem('notices') || '[]');
+      notices.push(val);
+      localStorage.setItem('notices', JSON.stringify(notices));
+      input.value = '';
+      renderNotices();
+    }
+
+    function renderNotices() {
+      const list = document.getElementById('noticeList');
+      list.innerHTML = '';
+      const notices = JSON.parse(localStorage.getItem('notices') || '[]');
+      notices.forEach((text, idx) => {
+        const div = document.createElement('div');
+        div.className = 'notice-item';
+        div.textContent = text;
+        div.title = '클릭하면 삭제됩니다.';
+        div.onclick = () => {
+          if (confirm("이 공지사항을 삭제할까요?")) {
+            notices.splice(idx, 1);
+            localStorage.setItem('notices', JSON.stringify(notices));
+            renderNotices();
+          }
+        };
+        list.appendChild(div);
+      });
+    }
+
+    // --- 초기 실행 ---
+    window.onload = () => {
+      renderSchedule();
+      renderTodos();
+      renderDuty();
+      renderComplaints();
+      renderNotices();
+    };
+  </script>
+
+</body>
+
+</html>
